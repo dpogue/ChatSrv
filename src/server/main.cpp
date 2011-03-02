@@ -1,31 +1,24 @@
-#include <cstdio>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <cstdlib>
-#include <cstring>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include "main.h"
 
-#define SERVER_TCP_PORT 7000
-#define BUFLEN 80
-#define TRUE 1
-#define LISTENQ 5
-#define MAXLINE 4096
-
-// Function Prototypes
-static void SystemFatal(const char* );
-void sendToAll(char *buf, int sender, int *client, int maxi);
-
-int main (int argc, char **argv)
+void sendToAll(char *buf, int sender, int *client, int maxi)
 {
-     int i, maxi, nready, bytes_to_read, arg;
-     int listen_sd, new_sd, sockfd, port, maxfd, client[FD_SETSIZE];
-     struct sockaddr_in server, client_addr;
-     socklen_t client_len;
-     char *bp, buf[BUFLEN];
-     ssize_t n;
-     fd_set rset, allset;
+     int i;
+     int sockfd;
+
+     for (i = 0; i <= maxi; i++)// check all clients for data
+     {
+          if ((sockfd = client[i]) < 0 || i == sender) {
+               continue;
+          }
+
+          write(client[i], buf, strlen(buf));
+     }
+
+}
+
+int parseArgs(int argc, char **argv) 
+{
+     int port;
 
      switch(argc)
      {
@@ -39,16 +32,38 @@ int main (int argc, char **argv)
           fprintf(stderr, "Usage: %s [port]\n", argv[0]);
           exit(1);
      }
+     
+     return port;
+}
+
+
+static void SystemFatal(const char* message)
+{
+     perror(message);
+     exit(EXIT_FAILURE);
+}
+
+
+int main (int argc, char **argv)
+{
+     int i, maxi, nready, bytes_to_read, arg;
+     int listen_sd, new_sd, sockfd, port, maxfd, client[FD_SETSIZE];
+     struct sockaddr_in server, client_addr;
+     socklen_t client_len;
+     char *bp, buf[BUFLEN];
+     ssize_t n;
+     fd_set rset, allset;
+
+     port = parseArgs(argc,argv);
 
      // Create a stream socket
      if ((listen_sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
           SystemFatal("Cannot Create Socket!");
      
-     // set SO_REUSEADDR so port can be resused imemediately after exit, i.e., after CTRL-c
      arg = 1;
-     if (setsockopt (listen_sd, SOL_SOCKET, SO_REUSEADDR, &arg, sizeof(arg)) == -1)
+     if (setsockopt (listen_sd, SOL_SOCKET, SO_REUSEADDR, &arg, sizeof(arg)) == -1) {
           SystemFatal("setsockopt");
-
+     }
      // Bind an address to the socket
      bzero((char *)&server, sizeof(struct sockaddr_in));
      server.sin_family = AF_INET;
@@ -123,46 +138,27 @@ int main (int argc, char **argv)
                     {
                          bp += n;
                          bytes_to_read -= n;
+                         if(*(bp-1) == '\n') {
+                              *bp = '\0';
+                              break;
+                         }
                     }
                     
                     sendToAll(buf,i, client, maxi);
 
-                    // if (n == 0) // connection closed by client
-                    // {
-                    //      printf(" Remote Address:  %s closed connection\n", inet_ntoa(client_addr.sin_addr));
-                    //      close(sockfd);
-                    //      FD_CLR(sockfd, &allset);
-                    //      client[i] = -1;
-                    // }
+                    if (n == 0) // connection closed by client
+                    {
+                         printf(" Remote Address:  %s closed connection\n", inet_ntoa(client_addr.sin_addr));
+                         close(sockfd);
+                         FD_CLR(sockfd, &allset);
+                         client[i] = -1;
+                    } 
                     
-                    if (--nready <= 0)
+                    if (--nready <= 0) {
                          break;        // no more readable descriptors
+                    }
                }
           }
      }
      return(0);
-}
-
-void sendToAll(char *buf, int sender, int *client, int maxi)
-{
-     int i;
-     int sockfd;
-
-
-     for (i = 0; i <= maxi; i++)// check all clients for data
-     {
-          if ((sockfd = client[i]) < 0 || i == sender) {
-               continue;
-          }
-
-          write(client[i], buf, BUFLEN);
-     }
-
-}
-
-// Prints the error stored in errno and aborts the program.
-static void SystemFatal(const char* message)
-{
-     perror (message);
-     exit (EXIT_FAILURE);
 }
