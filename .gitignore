@@ -1,0 +1,17 @@
+*~
+\#*
+.\#*
+*.tmproj
+tmtags
+tags
+.DS_Store
+*.swp
+*.swo
+*.o
+/doc
+/bin
+/lib
+/obj
+*.user
+*.plist
+
