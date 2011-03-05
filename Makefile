@@ -7,7 +7,8 @@ BINDIR=bin/
 OBJECTS=\
 		$(OBJDIR)messages.o \
 		$(OBJDIR)server.o \
-		$(OBJDIR)user.o
+		$(OBJDIR)user.o \
+		$(OBJDIR)servermain.o
 
 all: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(BINDIR)server
@@ -20,3 +21,6 @@ $(OBJDIR)server.o: src/server/server.cpp
 
 $(OBJDIR)user.o: src/user.cpp
 	$(CXX) $(CXXFLAGS) -c src/user.cpp -o $@
+
+$(OBJDIR)servermain.o: src/server/main.cpp
+	$(CXX) $(CXXFLAGS) -c src/server/main.cpp -o $@

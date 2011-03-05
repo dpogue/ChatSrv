@@ -40,6 +40,9 @@ server* server_init(short port) {
     }
 
     srv->fd_listen = fd;
+    srv->users = new list<user*>();
+
+    fprintf(stderr, "Users = %d\n", srv->users->size());
 
     return srv;
 }
@@ -58,14 +61,15 @@ void server_accept(server* srv) {
 
     u = accept_user(client, addr);
 
-    for (list<user*>::iterator i = srv->users.begin(); i != srv->users.end(); ++i) {
+    for (list<user*>::iterator i = srv->users->begin();
+            i != srv->users->end(); ++i) {
         /* Broadcast the join message to all other users before adding
            ourselves to the list */
 
         send_message(*i, "Client Joined\n");
     }
 
-    srv->users.push_back(u);
+    srv->users->push_back(u);
 }
 
 void server_loop(server* srv) {
@@ -78,8 +82,8 @@ void server_loop(server* srv) {
     while (true) {
         FD_ZERO(&socks);
         FD_SET(fd, &socks);
-        for (list<user*>::iterator i = srv->users.begin();
-                i != srv->users.end(); ++i) {
+        for (list<user*>::iterator i = srv->users->begin();
+                i != srv->users->end(); ++i) {
             /* Loop over the connected clients to build the fd set */
             FD_SET((*i)->socket, &socks);
             if (maxsock < (*i)->socket) {
@@ -94,10 +98,11 @@ void server_loop(server* srv) {
             server_accept(srv);
         }
 
-        for (list<user*>::iterator i = srv->users.begin();
-                i != srv->users.end(); ++i) {
+        for (list<user*>::iterator i = srv->users->begin();
+                i != srv->users->end(); ++i) {
             if (FD_ISSET((*i)->socket, &socks)) {
                 server_read_msg(srv, *i);
+                break;
             }
         }
     }
@@ -121,16 +126,16 @@ void server_read_msg(server* srv, user* sender) {
 
     if (nread == 0) {
         /* The client has disconnected */
-        srv->users.remove(sender);
+        srv->users->remove(sender);
 
-        for (list<user*>::iterator i = srv->users.begin();
-                i != srv->users.end(); ++i) {
+        for (list<user*>::iterator i = srv->users->begin();
+                i != srv->users->end(); ++i) {
             /* Broadcast the quit message to all other users */
             send_message(*i, "Client Left\n");
         }
     } else if (nread > 0) {
-        for (list<user*>::iterator i = srv->users.begin();
-                i != srv->users.end(); ++i) {
+        for (list<user*>::iterator i = srv->users->begin();
+                i != srv->users->end(); ++i) {
             /* Broadcast the message to all other users */
             if (*i == sender) {
                 continue;

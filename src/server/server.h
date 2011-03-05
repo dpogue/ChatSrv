@@ -10,7 +10,7 @@
 #define LISTENQ 5
 
 typedef struct _server {
-    std::list<user*> users;
+    std::list<user*>* users;
     int fd_listen;
     short port;
 } server;
