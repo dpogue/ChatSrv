@@ -10,10 +10,16 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#include "../user.h"
+#include "message.h"
+
 #define SERVER_TCP_PORT 7000
 #define BUFLEN 1024
 #define TRUE 1
 #define LISTENQ 5
+
+/* Ugly global variable... TODO Remove this */
+std::vector<user*> users;
 
 
 /**

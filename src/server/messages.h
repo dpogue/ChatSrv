@@ -2,6 +2,8 @@
 #define _MESSAGES_H_
 
 #include <cstdio>
+#include <cstring>
+#include <unistd.h>
 #include "../user.h"
 
 void send_message(user* client, char* msg);

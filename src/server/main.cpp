@@ -2,18 +2,13 @@
 
 void sendToAll(char *buf, int sender, int *client, int maxi)
 {
-     int i;
-     int sockfd;
+     for (int i = 0; i < users.size(); i++) {
+         if (users[i]->socket == sender) {
+             continue;
+         }
 
-     for (i = 0; i <= maxi; i++)// check all clients for data
-     {
-          if ((sockfd = client[i]) < 0 || i == sender) {
-               continue;
-          }
-
-          write(client[i], buf, strlen(buf));
+         send_msg(users[i], buf, strlen(buf));
      }
-
 }
 
 int parseArgs(int argc, char **argv) 
@@ -100,10 +95,13 @@ int main (int argc, char **argv)
                }
                printf(" Remote Address:  %s\n", inet_ntoa(client_addr.sin_addr));
 
+               user* u = accept_user(new_sd, client_addr);
+
                for (i = 0; i < FD_SETSIZE; i++) {
                     if (client[i] < 0)
                     {
                          client[i] = new_sd;// save descriptor
+                         users.add(u);
                          break;
                     }
                }

@@ -5,12 +5,14 @@
 #include <cstdlib>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 
 typedef struct _user {
     char* nickname;
     int socket;
-    hostent* hostname;
+    sockaddr_in hostname;
 } user;
 
 user* accept_user(int fd, sockaddr_in addr);
