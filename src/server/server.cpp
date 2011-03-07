@@ -134,6 +134,10 @@ void server_read_msg(server* srv, user* sender) {
             send_message(*i, "Client Left\n");
         }
     } else if (nread > 0) {
+        char* outbuf = (char*)malloc(512);
+        sprintf(outbuf, "[%s] %s",
+                inet_ntoa(sender->hostname.sin_addr), buf);
+
         for (list<user*>::iterator i = srv->users->begin();
                 i != srv->users->end(); ++i) {
             /* Broadcast the message to all other users */
@@ -141,7 +145,7 @@ void server_read_msg(server* srv, user* sender) {
                 continue;
             }
 
-            send_message(*i, buf);
+            send_message(*i, outbuf);
         }
     }
 }
