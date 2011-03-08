@@ -1,10 +1,14 @@
 #include "server.h"
+#include "connection.h"
+#include "messages.h"
 #include <cstdio>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <queue>
 
 using namespace std;
 
@@ -13,6 +17,9 @@ server* server_init(short port) {
     int fd = -1;
     int arg = 1;
     sockaddr_in addr;
+
+    srv->servname = (char*)malloc(MAXHOSTNAMELEN);
+    gethostname(srv->servname, MAXHOSTNAMELEN);
 
     srv->port = port;
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -60,6 +67,7 @@ void server_accept(server* srv) {
     fprintf(stdout, "Connection from %s\n", inet_ntoa(addr.sin_addr));
 
     u = accept_user(client, addr);
+    get_host_name(u);
 
     for (list<user*>::iterator i = srv->users->begin();
             i != srv->users->end(); ++i) {
@@ -134,18 +142,65 @@ void server_read_msg(server* srv, user* sender) {
             send_message(*i, "Client Left\n");
         }
     } else if (nread > 0) {
-        char* outbuf = (char*)malloc(512);
-        sprintf(outbuf, "[%s] %s",
-                inet_ntoa(sender->hostname.sin_addr), buf);
+        std::queue<char*> lines;
 
-        for (list<user*>::iterator i = srv->users->begin();
-                i != srv->users->end(); ++i) {
-            /* Broadcast the message to all other users */
-            if (*i == sender) {
-                continue;
-            }
-
-            send_message(*i, outbuf);
+        char* line = strtok(buf, "\n\r");
+        while (line != NULL) {
+            lines.push(strdup(line));
+            line = strtok(NULL, "\n\r");
         }
+
+        while (lines.size()) {
+            line = lines.front();
+            lines.pop();
+            parse_cmd(srv, sender, line);
+
+            char* outbuf = (char*)malloc(512);
+            sprintf(outbuf, "[%s] %s",
+                    inet_ntoa(sender->addr.sin_addr), buf);
+
+            for (list<user*>::iterator i = srv->users->begin();
+                    i != srv->users->end(); ++i) {
+                /* Broadcast the message to all other users */
+                if (*i == sender) {
+                    continue;
+                }
+
+                send_message(*i, outbuf);
+            }
+        }
+    }
+}
+
+void parse_cmd(server* srv, user* sender, char* cmd) {
+    char* token = NULL;
+
+    token = strtok(cmd, " ");
+
+    if (!strcmp(token, "NICK")) {
+        char* nick = strtok(NULL, " \r");
+
+        if (sender->nickname != NULL) {
+            free(sender->nickname);
+        }
+
+        sender->nickname = strdup(nick);
+    } else if (!strcmp(token, "USER")) {
+        char* uname = strtok(NULL, " ");
+        char* hname = strtok(NULL, " ");
+        char* sname = strtok(NULL, " ");
+        char* rname = strtok(NULL, "\n");
+        rname++; /* Ignore the leading colon */
+
+        sender->username = strdup(uname);
+        sender->hostname = strdup(hname);
+        sender->servname = strdup(sname);
+        sender->realname = strdup(rname);
+
+        fprintf(stderr, "%s@%s is %s\n", uname, sname, rname);
+        
+        char* welcome = numericmsg(srv, sender, 1, "Welcome to the server!");
+        send_message(sender, welcome);
+    } else {
     }
 }

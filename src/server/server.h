@@ -2,17 +2,19 @@
 #define _SERVER_H_
 
 #include <list>
+#include <netdb.h>
 #include "../user.h"
-#include "messages.h"
 
 #define PORT 6667
 #define BUFLEN 512
 #define LISTENQ 5
+#define MAXHOSTNAMELEN 64
 
 typedef struct _server {
     std::list<user*>* users;
     int fd_listen;
     short port;
+    char* servname;
 } server;
 
 
@@ -42,6 +44,16 @@ void server_accept(server* srv);
  */
 void server_loop(server* srv);
 
+/**
+ * Reads a message from a connected socket.
+ *
+ * @author Darryl Pogue
+ * @author Terence Stenvold
+ * @param srv The pointer to the server structure.
+ * @param sender The sender of the message.
+ */
 void server_read_msg(server* srv, user* sender);
+
+void parse_cmd(server* srv, user* sender, char* cmd);
 
 #endif
