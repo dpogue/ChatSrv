@@ -2,19 +2,21 @@
 #define _SERVER_H_
 
 #include <list>
+#include <ctime>
 #include <netdb.h>
 #include "../user.h"
 
-#define PORT 6667
 #define BUFLEN 512
 #define LISTENQ 5
-#define MAXHOSTNAMELEN 64
 
 typedef struct _server {
     std::list<user*>* users;
     int fd_listen;
     short port;
     char* servname;
+    char* version;
+    time_t starttime;
+    char* motdfile;
 } server;
 
 
@@ -22,10 +24,9 @@ typedef struct _server {
  * Initialize a server structure to run on the given port.
  *
  * @author Darryl Pogue
- * @param port The port on which to run the server.
  * @return Pointer to the initialized server structure.
  */
-server* server_init(short port);
+server* server_init();
 
 /**
  * Accepts an incoming connection.

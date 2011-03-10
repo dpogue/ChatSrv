@@ -1,7 +1,7 @@
 #include "server.h"
 
 int main() {
-    server* srv = server_init(PORT);
+    server* srv = server_init();
 
     server_loop(srv);
 

@@ -1,7 +1,10 @@
 #include "server.h"
 #include "connection.h"
 #include "messages.h"
+#include "../3rdParty/inih/ini.h"
 #include <cstdio>
+#include <cstring>
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,16 +15,19 @@
 
 using namespace std;
 
-server* server_init(short port) {
+static int confighandler(void*, const char*, const char*, const char*);
+
+server* server_init() {
     server* srv = (server*)malloc(sizeof(server));
     int fd = -1;
     int arg = 1;
     sockaddr_in addr;
 
-    srv->servname = (char*)malloc(MAXHOSTNAMELEN);
-    gethostname(srv->servname, MAXHOSTNAMELEN);
+    if (ini_parse("/etc/dodo.ini", &confighandler, srv) < 0) {
+        fprintf(stderr, "Could not load /etc/dodo.ini file\n");
+        exit(1);
+    }
 
-    srv->port = port;
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         /* Create the socket.
          * Exit if unsuccessful. */
@@ -37,7 +43,7 @@ server* server_init(short port) {
     /* Set up the socket address. Accept connections from any client. */
     bzero((char *)&addr, sizeof(sockaddr_in));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
+    addr.sin_port = htons(srv->port);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (bind(fd, (sockaddr*)&addr, sizeof(addr)) == -1) {
@@ -49,7 +55,7 @@ server* server_init(short port) {
     srv->fd_listen = fd;
     srv->users = new list<user*>();
 
-    fprintf(stderr, "Users = %d\n", srv->users->size());
+    srv->starttime = time(NULL);
 
     return srv;
 }
@@ -199,8 +205,28 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
         fprintf(stderr, "%s@%s is %s\n", uname, sname, rname);
         
-        char* welcome = numericmsg(srv, sender, 1, "Welcome to the server!");
-        send_message(sender, welcome);
+        send_welcome_info(srv, sender);
+
+        send_motd(srv, sender);
+    } else if (!strcmp(token, "PING")) {
+        char* msg = pongmsg(srv);
+        send_message(sender, msg);
     } else {
+    }
+}
+
+static int confighandler(void* user, const char* section, const char* name,
+                        const char* value) {
+    server* srv = (server*)user;
+
+    #define MATCH(s, n) strcasecmp(section, s) == 0 && strcasecmp(name, n) == 0
+    if (MATCH("server", "hostname")) {
+        srv->servname = strdup(value);
+    } else if (MATCH("server", "version")) {
+        srv->version = strdup(value);
+    } else if (MATCH("server", "port")) {
+        srv->port = atoi(value);
+    } else if (MATCH("server", "motd")) {
+        srv->motdfile = strdup(value);
     }
 }

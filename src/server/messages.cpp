@@ -12,6 +12,14 @@ char* numericmsg(server* srv, user* to, int id, char* msg) {
     return num;
 }
 
+char* pongmsg(server* srv) {
+    char* pong = (char*)malloc(512);
+
+    sprintf(pong, ":%s PONG %s :%s\n", srv->servname, srv->servname, srv->servname);
+
+    return pong;
+}
+
 char* joinmsg(user* sender, char* receiver) {
     char* join = (char*)malloc(512);
 

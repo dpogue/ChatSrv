@@ -10,7 +10,7 @@
 void send_message(user* client, char* msg);
 
 char* numericmsg(server* srv, user* to, int id, char* msg);
-
+char* pongmsg(server* srv);
 char* joinmsg(user* sender, char* receiver);
 char* noticemsg(user* sender, char* msg);
 char* privmsg(user* sender, char* receiver, char* msg);

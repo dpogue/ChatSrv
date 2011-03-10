@@ -5,6 +5,7 @@ SRCDIR=src/
 BINDIR=bin/
 
 OBJECTS=\
+		$(OBJDIR)ini.o \
 		$(OBJDIR)messages.o \
 		$(OBJDIR)server.o \
 		$(OBJDIR)user.o \
@@ -16,6 +17,9 @@ all: $(OBJECTS)
 
 clean:
 	rm -f $(OBJECTS)
+
+$(OBJDIR)ini.o: src/3rdParty/inih/ini.c
+	$(CXX) $(CXXFLAGS) -c src/3rdParty/inih/ini.c -o $@
 
 $(OBJDIR)messages.o: src/server/messages.cpp
 	$(CXX) $(CXXFLAGS) -c src/server/messages.cpp -o $@
