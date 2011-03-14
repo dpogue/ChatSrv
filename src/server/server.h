@@ -2,15 +2,27 @@
 #define _SERVER_H_
 
 #include <list>
+#include <set>
+#include <cstring>
+#include <map>
 #include <ctime>
 #include <netdb.h>
 #include "../user.h"
+#include "../channel.h"
 
 #define BUFLEN 512
 #define LISTENQ 5
 
+struct set_strcmp {
+    bool operator()(const char* s1, const char* s2) {
+        return strcmp(s1, s2) < 0;
+    }
+};
+
 typedef struct _server {
     std::list<user*>* users;
+    std::set<char*, set_strcmp>* nicknames;
+    std::map<char*, channel*>* channels;
     int fd_listen;
     short port;
     char* servname;
@@ -18,7 +30,6 @@ typedef struct _server {
     time_t starttime;
     char* motdfile;
 } server;
-
 
 /**
  * Initialize a server structure to run on the given port.

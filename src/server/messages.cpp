@@ -6,8 +6,13 @@ void send_message(user* client, char* msg) {
 
 char* numericmsg(server* srv, user* to, int id, char* msg) {
     char* num = (char*)malloc(512);
+    char* nick = "*";
 
-    sprintf(num, ":%s %03d %s :%s\n", srv->servname, id, to->nickname, msg);
+    if (to->nickname != NULL) {
+        nick = to->nickname;
+    }
+
+    sprintf(num, ":%s %03d %s :%s\n", srv->servname, id, nick, msg);
 
     return num;
 }

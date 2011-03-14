@@ -54,6 +54,8 @@ server* server_init() {
 
     srv->fd_listen = fd;
     srv->users = new list<user*>();
+    srv->nicknames = new set<char*, set_strcmp>();
+    srv->channels = NULL;
 
     srv->starttime = time(NULL);
 
@@ -74,15 +76,6 @@ void server_accept(server* srv) {
 
     u = accept_user(client, addr);
     get_host_name(u);
-
-    for (list<user*>::iterator i = srv->users->begin();
-            i != srv->users->end(); ++i) {
-        /* Broadcast the join message to all other users before adding
-           ourselves to the list */
-
-        send_message(*i, "Client Joined\n");
-    }
-
     srv->users->push_back(u);
 }
 
@@ -161,19 +154,19 @@ void server_read_msg(server* srv, user* sender) {
             lines.pop();
             parse_cmd(srv, sender, line);
 
-            char* outbuf = (char*)malloc(512);
+            /*char* outbuf = (char*)malloc(512);
             sprintf(outbuf, "[%s] %s",
                     inet_ntoa(sender->addr.sin_addr), buf);
 
             for (list<user*>::iterator i = srv->users->begin();
                     i != srv->users->end(); ++i) {
-                /* Broadcast the message to all other users */
+                // Broadcast the message to all other users
                 if (*i == sender) {
                     continue;
                 }
 
                 send_message(*i, outbuf);
-            }
+            }*/
         }
     }
 }
@@ -186,11 +179,27 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
     if (!strcmp(token, "NICK")) {
         char* nick = strtok(NULL, " \r");
 
+        fprintf(stderr, "Got nickname request %s\n", nick);
+
+        if (srv->nicknames->find(nick) != srv->nicknames->end()) {
+            fprintf(stderr, "\tFound in set!\n");
+            char* msg = (char*)malloc(512);
+            sprintf(msg, "%s :Nickname already in use", nick);
+            char* tmp = numericmsg(srv, sender, 433, msg);
+            send_message(sender, tmp);
+            free(tmp);
+            free(msg);
+
+            return;
+        }
+
         if (sender->nickname != NULL) {
+            srv->nicknames->erase(sender->nickname);
             free(sender->nickname);
         }
 
         sender->nickname = strdup(nick);
+        srv->nicknames->insert(sender->nickname);
     } else if (!strcmp(token, "USER")) {
         char* uname = strtok(NULL, " ");
         char* hname = strtok(NULL, " ");
@@ -211,6 +220,20 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
     } else if (!strcmp(token, "PING")) {
         char* msg = pongmsg(srv);
         send_message(sender, msg);
+    } else if (!strcmp(token, "PRIVMSG")) {
+        char* who = strtok(NULL, " ");
+        char* line = strtok(NULL, "\n");
+        line++; /* Ignore the leading colon */
+
+        char* msg = privmsg(sender, who,  line);
+        for (list<user*>::iterator i = srv->users->begin();
+                i != srv->users->end(); ++i) {
+            if (!strcmp((*i)->nickname, who)) {
+                send_message(*i, msg);
+                break;
+            }
+        }
+        free(msg);
     } else {
     }
 }
@@ -229,4 +252,6 @@ static int confighandler(void* user, const char* section, const char* name,
     } else if (MATCH("server", "motd")) {
         srv->motdfile = strdup(value);
     }
+
+    return 0;
 }
