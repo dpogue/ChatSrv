@@ -33,10 +33,18 @@ char* joinmsg(user* sender, char* receiver) {
     return join;
 }
 
-char* noticemsg(user* sender, char* msg) {
+char* noticemsg(user* sender, char* receiver, char* msg) {
     char* notice = (char*)malloc(512);
 
-    sprintf(notice, "NOTICE %s :%s\n", sender->nickname, msg);
+    sprintf(notice, ":%s NOTICE %s :%s\n", sender->nickname, receiver, msg);
+
+    return notice;
+}
+
+char* noticemsg_s(char* sender, char* msg) {
+    char* notice = (char*)malloc(512);
+
+    sprintf(notice, "NOTICE %s :%s\n", sender, msg);
 
     return notice;
 }

@@ -9,13 +9,17 @@ using namespace std;
 void get_host_name(user* u) {
     hostent* hp;
 
-    send_message(u, "NOTICE AUTH :*** Looking up your hostname...\n");
+    char* msg = noticemsg_s("AUTH", "*** Looking up your hostname...");
+    send_message(u, msg);
+    free(msg);
 
     hp = gethostbyaddr((char*)&(u->addr.sin_addr.s_addr),
             sizeof(u->addr.sin_addr.s_addr), AF_INET);
     u->host = hp;
 
-    send_message(u, "NOTICE AUTH :*** Found your hostname\n");
+    msg = noticemsg_s("AUTH", "*** Found your hostname");
+    send_message(u, msg);
+    free(msg);
 }
 
 void send_motd(server* srv, user* u) {
@@ -45,7 +49,9 @@ void send_motd(server* srv, user* u) {
     send_message(u, tmp);
     free(tmp);
 
-    for (vector<char*>::iterator it = motd.begin(); it != motd.end(); ++it) {
+    for (vector<char*>::iterator it = motd.begin();
+            it != motd.end(); ++it)
+    {
         sprintf(msg, "- %s", *it);
         tmp = numericmsg(srv, u, 372, msg);
         send_message(u, tmp);
@@ -69,8 +75,7 @@ void send_welcome_info(server* srv, user* u) {
     send_message(u, sndmsg);
     free(sndmsg);
 
-    sndmsg = (char*)malloc(512);
-    sprintf(sndmsg, "NOTICE %s :%s\n", srv->servname, msg);
+    sndmsg = noticemsg_s(srv->servname, msg);
     send_message(u, sndmsg);
     free(sndmsg);
 

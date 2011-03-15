@@ -121,7 +121,7 @@ void server_read_msg(server* srv, user* sender) {
     char* bp = buf;
     int bsize = BUFLEN;
 
-    while ((nread = read(sender->socket, bp, bsize)) > 0) {
+    while (bsize && (nread = read(sender->socket, bp, bsize)) > 0) {
         bp += nread;
         bsize -= nread;
 
@@ -226,6 +226,20 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         line++; /* Ignore the leading colon */
 
         char* msg = privmsg(sender, who,  line);
+        for (list<user*>::iterator i = srv->users->begin();
+                i != srv->users->end(); ++i) {
+            if (!strcmp((*i)->nickname, who)) {
+                send_message(*i, msg);
+                break;
+            }
+        }
+        free(msg);
+    } else if (!strcmp(token, "NOTICE")) {
+        char* who = strtok(NULL, " ");
+        char* line = strtok(NULL, "\n");
+        line++; /* Ignore the leading colon */
+
+        char* msg = noticemsg(sender, who,  line);
         for (list<user*>::iterator i = srv->users->begin();
                 i != srv->users->end(); ++i) {
             if (!strcmp((*i)->nickname, who)) {
