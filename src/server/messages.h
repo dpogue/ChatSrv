@@ -15,6 +15,7 @@ char* joinmsg(user* sender, char* receiver);
 char* noticemsg(user* sender, char* receiver, char* msg);
 char* noticemsg_s(char* sender, char* msg);
 char* privmsg(user* sender, char* receiver, char* msg);
+char* nickmsg(user* sender, char* name);
 char* partmsg(user* sender);
 
 #endif

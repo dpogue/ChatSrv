@@ -138,7 +138,7 @@ void server_read_msg(server* srv, user* sender) {
         for (list<user*>::iterator i = srv->users->begin();
                 i != srv->users->end(); ++i) {
             /* Broadcast the quit message to all other users */
-            send_message(*i, "Client Left\n");
+            //send_message(*i, "Client Left\n");
         }
     } else if (nread > 0) {
         std::queue<char*> lines;
@@ -194,6 +194,10 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         }
 
         if (sender->nickname != NULL) {
+            char* msg = nickmsg(sender, nick);
+            send_message(sender, msg);
+            free(msg);
+
             srv->nicknames->erase(sender->nickname);
             free(sender->nickname);
         }
@@ -202,19 +206,17 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         srv->nicknames->insert(sender->nickname);
     } else if (!strcmp(token, "USER")) {
         char* uname = strtok(NULL, " ");
-        char* hname = strtok(NULL, " ");
-        char* sname = strtok(NULL, " ");
+        /*char* hname =*/ strtok(NULL, " ");
+        /*char* sname =*/ strtok(NULL, " ");
         char* rname = strtok(NULL, "\n");
         rname++; /* Ignore the leading colon */
 
         sender->username = strdup(uname);
-        sender->hostname = strdup(hname);
-        sender->servname = strdup(sname);
         sender->realname = strdup(rname);
 
-        fprintf(stderr, "%s@%s is %s\n", uname, sname, rname);
-        
         send_welcome_info(srv, sender);
+
+        fprintf(stderr, "%s@%s is %s\n", uname, sender->hostname, rname);
 
         send_motd(srv, sender);
     } else if (!strcmp(token, "PING")) {
@@ -230,7 +232,8 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
                 i != srv->users->end(); ++i) {
             if (!strcmp((*i)->nickname, who)) {
                 send_message(*i, msg);
-                break;
+                free(msg);
+                return;
             }
         }
         free(msg);
@@ -244,10 +247,26 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
                 i != srv->users->end(); ++i) {
             if (!strcmp((*i)->nickname, who)) {
                 send_message(*i, msg);
-                break;
+                free(msg);
+                return;
             }
         }
         free(msg);
+    } else if (!strcmp(token, "USERHOST")) {
+        char* who = strtok(NULL, "\n");
+
+        for (list<user*>::iterator i = srv->users->begin();
+                i != srv->users->end(); ++i) {
+            if (!strcmp((*i)->nickname, who)) {
+                char* msg = (char*)malloc(512);
+                sprintf(msg, "%s=%c%s", (*i)->nickname,
+                        ((*i)->away ? '-' : '+'), user_userhost(*i));
+                char* tmp = numericmsg(srv, sender, 302, msg);
+                send_message(sender, tmp);
+                free(tmp);
+                free(msg);
+            }
+        }
     } else {
     }
 }

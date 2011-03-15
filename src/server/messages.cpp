@@ -28,7 +28,7 @@ char* pongmsg(server* srv) {
 char* joinmsg(user* sender, char* receiver) {
     char* join = (char*)malloc(512);
 
-    sprintf(join, ":%s JOIN %s\n", sender->nickname, receiver);
+    sprintf(join, ":%s JOIN %s\n", user_userhost_name(sender), receiver);
 
     return join;
 }
@@ -55,6 +55,14 @@ char* privmsg(user* sender, char* receiver, char* msg) {
     sprintf(priv, ":%s PRIVMSG %s :%s\n", sender->nickname, receiver, msg);
 
     return priv;
+}
+
+char* nickmsg(user* sender, char* name) {
+    char* nick = (char*)malloc(512);
+
+    sprintf(nick, ":%s NICK :%s\n", user_userhost_name(sender), name);
+
+    return nick;
 }
 
 char* partmsg(user* sender) {
