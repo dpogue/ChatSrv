@@ -12,7 +12,7 @@ char* numericmsg(server* srv, user* to, int id, char* msg) {
         nick = to->nickname;
     }
 
-    sprintf(num, ":%s %03d %s :%s\n", srv->servname, id, nick, msg);
+    sprintf(num, ":%s %03d %s %s\n", srv->servname, id, nick, msg);
 
     return num;
 }
@@ -25,10 +25,10 @@ char* pongmsg(server* srv) {
     return pong;
 }
 
-char* joinmsg(user* sender, char* receiver) {
+char* joinmsg(user* sender, channel* chan) {
     char* join = (char*)malloc(512);
 
-    sprintf(join, ":%s JOIN %s\n", user_userhost_name(sender), receiver);
+    sprintf(join, ":%s JOIN %s\n", user_userhost_name(sender), chan->name);
 
     return join;
 }
@@ -36,7 +36,8 @@ char* joinmsg(user* sender, char* receiver) {
 char* noticemsg(user* sender, char* receiver, char* msg) {
     char* notice = (char*)malloc(512);
 
-    sprintf(notice, ":%s NOTICE %s :%s\n", sender->nickname, receiver, msg);
+    sprintf(notice, ":%s NOTICE %s :%s\n",
+            user_userhost_name(sender), receiver, msg);
 
     return notice;
 }
@@ -52,7 +53,8 @@ char* noticemsg_s(char* sender, char* msg) {
 char* privmsg(user* sender, char* receiver, char* msg) {
     char* priv = (char*)malloc(512);
 
-    sprintf(priv, ":%s PRIVMSG %s :%s\n", sender->nickname, receiver, msg);
+    sprintf(priv, ":%s PRIVMSG %s :%s\n",
+            user_userhost_name(sender), receiver, msg);
 
     return priv;
 }

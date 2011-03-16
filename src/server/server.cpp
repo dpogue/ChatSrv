@@ -55,7 +55,7 @@ server* server_init() {
     srv->fd_listen = fd;
     srv->users = new list<user*>();
     srv->nicknames = new set<char*, set_strcmp>();
-    srv->channels = NULL;
+    srv->channels = new map<char*, channel*, set_strcmp>();
 
     srv->starttime = time(NULL);
 
@@ -202,7 +202,18 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
             free(sender->nickname);
         }
 
-        sender->nickname = strdup(nick);
+        if (sender->nickname == NULL && sender->username != NULL) {
+            sender->nickname = strdup(nick);
+            send_welcome_info(srv, sender);
+
+            fprintf(stderr, "%s@%s is %s\n",
+                    sender->username, sender->hostname, sender->realname);
+
+            send_motd(srv, sender);
+        } else {
+            sender->nickname = strdup(nick);
+        }
+
         srv->nicknames->insert(sender->nickname);
     } else if (!strcmp(token, "USER")) {
         char* uname = strtok(NULL, " ");
@@ -214,11 +225,36 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         sender->username = strdup(uname);
         sender->realname = strdup(rname);
 
-        send_welcome_info(srv, sender);
+        if (sender->nickname != NULL) {
+            send_welcome_info(srv, sender);
 
-        fprintf(stderr, "%s@%s is %s\n", uname, sender->hostname, rname);
+            fprintf(stderr, "%s@%s is %s\n", uname, sender->hostname, rname);
 
-        send_motd(srv, sender);
+            send_motd(srv, sender);
+        }
+    } else if (!strcmp(token, "JOIN")) {
+        char* chan_name = strtok(NULL, "\n");
+        channel* chan = NULL;
+        map<char*, channel*>::iterator it = srv->channels->find(chan_name);
+
+        if (*chan_name != '#' && *chan_name != '&' && *chan_name != '~') {
+            char* tmp = (char*)malloc(512);
+            sprintf(tmp, "%s :No such channel", chan_name);
+            char* msg = numericmsg(srv, sender, 403, tmp);
+            send_message(sender, msg);
+            free(msg);
+            free(tmp);
+            return;
+        }
+
+        if (it == srv->channels->end()) {
+            chan = create_channel(chan_name);
+            srv->channels->insert(make_pair(chan_name, chan));
+        } else {
+            chan = it->second;
+        }
+
+        join_channel(chan, sender);
     } else if (!strcmp(token, "PING")) {
         char* msg = pongmsg(srv);
         send_message(sender, msg);
@@ -226,6 +262,27 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         char* who = strtok(NULL, " ");
         char* line = strtok(NULL, "\n");
         line++; /* Ignore the leading colon */
+
+        if (*who == '#' || *who == '&' || *who == '~') {
+            /* Sending to a channel */
+
+            char* msg = NULL;
+            map<char*, channel*>::iterator it = srv->channels->find(who);
+            if (it == srv->channels->end()) {
+                char* tmp = (char*)malloc(512);
+                sprintf(tmp, "%s :No such channel", who);
+                msg = numericmsg(srv, sender, 403, tmp);
+                send_message(sender, msg);
+                free(msg);
+                free(tmp);
+                return;
+            }
+
+            msg = privmsg(sender, who, line);
+            send_to_channel(it->second, msg, sender);
+            free(msg);
+            return;
+        }
 
         char* msg = privmsg(sender, who,  line);
         for (list<user*>::iterator i = srv->users->begin();
@@ -259,7 +316,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
                 i != srv->users->end(); ++i) {
             if (!strcmp((*i)->nickname, who)) {
                 char* msg = (char*)malloc(512);
-                sprintf(msg, "%s=%c%s", (*i)->nickname,
+                sprintf(msg, ":%s=%c%s", (*i)->nickname,
                         ((*i)->away ? '-' : '+'), user_userhost(*i));
                 char* tmp = numericmsg(srv, sender, 302, msg);
                 send_message(sender, tmp);

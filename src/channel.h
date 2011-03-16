@@ -1,9 +1,15 @@
 #ifndef _CHANNEL_H_
 #define _CHANNEL_H_
 
+#include <list>
+#include <cstring>
+
 enum usermode {
-    kOperator   = (1 << 0),
-    kVoice      = (1 << 1)
+    kFounder    = '~',
+    kAdmin      = '&',
+    kOperator   = '@',
+    kHalfOp     = '%',
+    kVoice      = '+',
 };
 
 typedef struct _channel_user {
@@ -14,15 +20,17 @@ typedef struct _channel_user {
 typedef struct _channel {
     char* name;
     char* topic;
+    char* topic_who;
+    unsigned int topic_time;
     std::list<channel_user>* users;
 } channel;
 
-//char* chars_for_mode(usermode mode);
-
 channel* create_channel(char* name);
 
-void join_channel(channel* chan, user* user);
+void send_to_channel(channel* chan, char* msg, struct _user* sender);
 
-void channel_set_topic(channel* chan, char* topic);
+void join_channel(channel* chan, struct _user* user);
+
+void channel_set_topic(channel* chan, char* topic, struct _user* who);
 
 #endif

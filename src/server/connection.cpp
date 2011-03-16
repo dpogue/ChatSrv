@@ -32,7 +32,7 @@ void send_motd(server* srv, user* u) {
     if (motd.size() == 0) {
         FILE* fd = fopen(srv->motdfile, "r");
         if (fd == NULL) {
-            char* msg = "MOTD file is missing";
+            char* msg = ":MOTD file is missing";
             msg = numericmsg(srv, u, 422, msg);
             send_message(u, msg);
             free(msg);
@@ -51,7 +51,7 @@ void send_motd(server* srv, user* u) {
 
     char* tmp;
     char* msg = (char*)malloc(512);
-    sprintf(msg, "- %s Message of the Day -", srv->servname);
+    sprintf(msg, ":- %s Message of the Day -", srv->servname);
     tmp = numericmsg(srv, u, 375, msg);
     send_message(u, tmp);
     free(tmp);
@@ -59,13 +59,13 @@ void send_motd(server* srv, user* u) {
     for (vector<char*>::iterator it = motd.begin();
             it != motd.end(); ++it)
     {
-        sprintf(msg, "- %s", *it);
+        sprintf(msg, ":- %s", *it);
         tmp = numericmsg(srv, u, 372, msg);
         send_message(u, tmp);
         free(tmp);
     }
 
-    sprintf(msg, "End of the /MOTD command.");
+    sprintf(msg, ":End of the /MOTD command.");
     tmp = numericmsg(srv, u, 376, msg);
     send_message(u, tmp);
     free(tmp);
@@ -74,12 +74,12 @@ void send_motd(server* srv, user* u) {
 
 void send_welcome_info(server* srv, user* u) {
     char* msg = (char*)malloc(512);
-    sprintf(msg, "Welcome to the IRC Network %s", user_userhost_name(u));
+    sprintf(msg, ":Welcome to the IRC Network %s", user_userhost_name(u));
     char* sndmsg = numericmsg(srv, u, 1, msg);
     send_message(u, sndmsg);
     free(sndmsg);
 
-    sprintf(msg, "Your host is %s, running version %s",
+    sprintf(msg, ":Your host is %s, running version %s",
             srv->servname, srv->version);
     sndmsg = numericmsg(srv, u, 2, msg);
     send_message(u, sndmsg);
@@ -91,7 +91,7 @@ void send_welcome_info(server* srv, user* u) {
     send_message(u, sndmsg);
     free(sndmsg);
 
-    sprintf(msg, "This server was created %s", ctime(&srv->starttime));
+    sprintf(msg, ":This server was created %s", ctime(&srv->starttime));
     sndmsg = numericmsg(srv, u, 3, msg);
     send_message(u, sndmsg);
     free(sndmsg);
