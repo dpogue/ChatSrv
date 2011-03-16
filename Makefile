@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS += -W -Wall -g
+CXXFLAGS += -W -Wall -Wno-write-strings -g
 OBJDIR=obj/
 SRCDIR=src/
 BINDIR=bin/
