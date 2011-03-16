@@ -134,12 +134,14 @@ void server_read_msg(server* srv, user* sender) {
     if (nread == 0) {
         /* The client has disconnected */
         srv->users->remove(sender);
+        srv->nicknames->erase(sender->nickname);
 
-        for (list<user*>::iterator i = srv->users->begin();
-                i != srv->users->end(); ++i) {
-            /* Broadcast the quit message to all other users */
-            //send_message(*i, "Client Left\n");
+        char* qmsg = quitmsg(sender, "Client Exited.");
+        for (list<channel*>::iterator it = sender->channels->begin();
+                it != sender->channels->end(); ++it) {
+            leave_channel(*it, sender, qmsg);
         }
+        free(qmsg);
     } else if (nread > 0) {
         std::queue<char*> lines;
 
@@ -196,6 +198,12 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         if (sender->nickname != NULL) {
             char* msg = nickmsg(sender, nick);
             send_message(sender, msg);
+
+            for (list<channel*>::iterator it = sender->channels->begin();
+                    it != sender->channels->end(); ++it) {
+                send_to_channel(*it, msg, sender);
+            }
+
             free(msg);
 
             srv->nicknames->erase(sender->nickname);
@@ -232,6 +240,20 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
             send_motd(srv, sender);
         }
+    } else if (!strcmp(token, "QUIT")) {
+        char* text = strtok(NULL, "\n");
+        ++text; /* Ignore the leading colon */
+
+        char* msg = quitmsg(sender, text);
+        for (list<channel*>::iterator it = sender->channels->begin();
+                it != sender->channels->end(); ++it) {
+            leave_channel(*it, sender, msg);
+        }
+        free(msg);
+
+        srv->nicknames->erase(sender->nickname);
+        srv->users->remove(sender);
+        //user_destroy(sender);
     } else if (!strcmp(token, "JOIN")) {
         char* chan_name = strtok(NULL, "\n");
         channel* chan = NULL;

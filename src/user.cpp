@@ -1,4 +1,7 @@
 #include "user.h"
+#include "channel.h"
+
+using namespace std;
 
 user* accept_user(int fd, sockaddr_in addr) {
     user* u = (user*)malloc(sizeof(user));
@@ -9,6 +12,7 @@ user* accept_user(int fd, sockaddr_in addr) {
     u->addr = addr;
     u->hostname = NULL;
     u->away = false;
+    u->channels = new list<channel*>();
     
     return u;
 }

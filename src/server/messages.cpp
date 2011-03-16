@@ -74,3 +74,11 @@ char* partmsg(user* sender) {
 
     return part;
 }
+
+char* quitmsg(user* sender, char* text) {
+    char* quit = (char*)malloc(512);
+
+    sprintf(quit, ":%s QUIT :%s\n", user_userhost_name(sender), text);
+
+    return quit;
+}

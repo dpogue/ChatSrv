@@ -37,10 +37,28 @@ void join_channel(channel* chan, user* user) {
     }
 
     chan->users->push_back(c_user);
+    user->channels->push_back(chan);
 
     char* msg = joinmsg(user, chan);
     send_to_channel(chan, msg, NULL);
     free(msg);
+}
+
+void leave_channel(channel* chan, user* user, char* msg) {
+    list<channel_user>::iterator idx = chan->users->end();
+
+    for (list<channel_user>::iterator it = chan->users->begin();
+            it != chan->users->end(); ++it) {
+        if (it->user == user) {
+            idx = it;
+        } else {
+            send_message(it->user, msg);
+        }
+    }
+
+    if (idx != chan->users->end()) {
+        chan->users->erase(idx);
+    }
 }
 
 void channel_set_topic(channel* chan, char* topic, user* who) {

@@ -31,6 +31,8 @@ void send_to_channel(channel* chan, char* msg, struct _user* sender);
 
 void join_channel(channel* chan, struct _user* user);
 
+void leave_channel(channel* chan, struct _user* user, char* msg);
+
 void channel_set_topic(channel* chan, char* topic, struct _user* who);
 
 #endif

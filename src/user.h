@@ -8,16 +8,17 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <list>
 
 typedef struct _user {
     char* nickname;
     char* username;
     char* hostname;
-    char* servname;
     char* realname;
     int socket;
     sockaddr_in addr;
     hostent* host;
+    std::list<struct _channel*>* channels;
     bool away;
 } user;
 
