@@ -44,6 +44,13 @@ char* user_userhost(user* usr);
  */
 char* user_userhost_name(user* usr);
 
-void disconnect_user(user* usr);
+/**
+ * Closes the user's connections and frees the data associated with
+ * the user.
+ *
+ * @author Darryl Pogue
+ * @param usr The user to destroy.
+ */
+void destroy_user(user* usr);
 
 #endif

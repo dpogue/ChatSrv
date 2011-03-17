@@ -253,7 +253,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
         srv->nicknames->erase(sender->nickname);
         srv->users->remove(sender);
-        //user_destroy(sender);
+        destroy_user(sender);
     } else if (!strcmp(token, "JOIN")) {
         char* chan_name = strtok(NULL, "\n");
         channel* chan = NULL;

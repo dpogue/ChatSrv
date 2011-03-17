@@ -1,5 +1,6 @@
 #include "user.h"
 #include "channel.h"
+#include <unistd.h>
 
 using namespace std;
 
@@ -31,4 +32,17 @@ char* user_userhost_name(user* usr) {
     sprintf(name, "%s!~%s@%s", usr->nickname, usr->username, usr->hostname);
 
     return name;
+}
+
+void destroy_user(user* usr) {
+    free(usr->nickname);
+    free(usr->username);
+    free(usr->hostname);
+    free(usr->realname);
+
+    free(usr->host);
+
+    delete usr->channels;
+
+    close(usr->socket);
 }
