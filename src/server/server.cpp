@@ -155,20 +155,6 @@ void server_read_msg(server* srv, user* sender) {
             line = lines.front();
             lines.pop();
             parse_cmd(srv, sender, line);
-
-            /*char* outbuf = (char*)malloc(512);
-            sprintf(outbuf, "[%s] %s",
-                    inet_ntoa(sender->addr.sin_addr), buf);
-
-            for (list<user*>::iterator i = srv->users->begin();
-                    i != srv->users->end(); ++i) {
-                // Broadcast the message to all other users
-                if (*i == sender) {
-                    continue;
-                }
-
-                send_message(*i, outbuf);
-            }*/
         }
     }
 }
@@ -225,10 +211,8 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         srv->nicknames->insert(sender->nickname);
     } else if (!strcmp(token, "USER")) {
         char* uname = strtok(NULL, " ");
-        /*char* hname =*/ strtok(NULL, " ");
-        /*char* sname =*/ strtok(NULL, " ");
+        strtok(NULL, ":");
         char* rname = strtok(NULL, "\n");
-        rname++; /* Ignore the leading colon */
 
         sender->username = strdup(uname);
         sender->realname = strdup(rname);
@@ -241,8 +225,8 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
             send_motd(srv, sender);
         }
     } else if (!strcmp(token, "QUIT")) {
-        char* text = strtok(NULL, "\n");
-        ++text; /* Ignore the leading colon */
+        char* text = strtok(NULL, ":");
+        //char* text = strtok(NULL, "\n");
 
         char* msg = quitmsg(sender, text);
         for (list<channel*>::iterator it = sender->channels->begin();
@@ -270,7 +254,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         }
 
         if (it == srv->channels->end()) {
-            chan = create_channel(chan_name);
+            chan = create_channel(srv, chan_name);
             srv->channels->insert(make_pair(chan_name, chan));
         } else {
             chan = it->second;
@@ -282,8 +266,8 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         send_message(sender, msg);
     } else if (!strcmp(token, "PRIVMSG")) {
         char* who = strtok(NULL, " ");
-        char* line = strtok(NULL, "\n");
-        line++; /* Ignore the leading colon */
+        char* line = strtok(NULL, ":");
+        //char* line = strtok(NULL, "\n");
 
         if (*who == '#' || *who == '&' || *who == '~') {
             /* Sending to a channel */
@@ -318,8 +302,8 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         free(msg);
     } else if (!strcmp(token, "NOTICE")) {
         char* who = strtok(NULL, " ");
-        char* line = strtok(NULL, "\n");
-        line++; /* Ignore the leading colon */
+        char* line = strtok(NULL, ":");
+        //char* line = strtok(NULL, "\n");
 
         char* msg = noticemsg(sender, who,  line);
         for (list<user*>::iterator i = srv->users->begin();
@@ -346,7 +330,6 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
                 free(msg);
             }
         }
-    } else {
     }
 }
 

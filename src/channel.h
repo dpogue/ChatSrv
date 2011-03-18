@@ -22,14 +22,17 @@ typedef struct _channel {
     char* topic;
     char* topic_who;
     unsigned int topic_time;
+    struct _server* server;
     std::list<channel_user>* users;
 } channel;
 
-channel* create_channel(char* name);
+channel* create_channel(struct _server* server, char* name);
 
 void send_to_channel(channel* chan, char* msg, struct _user* sender);
 
 void join_channel(channel* chan, struct _user* user);
+
+char** get_channel_names(channel* chan, int* num_msgs);
 
 void leave_channel(channel* chan, struct _user* user, char* msg);
 

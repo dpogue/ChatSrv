@@ -37,10 +37,7 @@ char* user_userhost_name(user* usr) {
 void destroy_user(user* usr) {
     free(usr->nickname);
     free(usr->username);
-    free(usr->hostname);
     free(usr->realname);
-
-    free(usr->host);
 
     delete usr->channels;
 

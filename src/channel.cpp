@@ -6,11 +6,12 @@
 
 using namespace std;
 
-channel* create_channel(char* name) {
+channel* create_channel(server* server, char* name) {
     channel* chan = (channel*)malloc(sizeof(channel));
     chan->topic = NULL;
     chan->topic_who = NULL;
     chan->topic_time = 0;
+    chan->server = server;
 
     chan->name = strdup(name);
 
@@ -34,6 +35,8 @@ void join_channel(channel* chan, user* user) {
 
     if (chan->users->size() == 0) {
         c_user.mode = '@';
+    } else {
+        c_user.mode = ' ';
     }
 
     chan->users->push_back(c_user);
@@ -42,6 +45,53 @@ void join_channel(channel* chan, user* user) {
     char* msg = joinmsg(user, chan);
     send_to_channel(chan, msg, NULL);
     free(msg);
+
+    int len = 0;
+    char** names = get_channel_names(chan, &len);
+
+    for (int i = 0; i < len; i++) {
+        msg = numericmsg(chan->server, user, 353, names[i]);
+        send_message(user, msg);
+        free(names[i]);
+        free(msg);
+    }
+    free(names);
+
+    char* tmp = (char*)malloc(512);
+    sprintf(tmp, "%s :End of /NAMES list", chan->name);
+    msg = numericmsg(chan->server, user, 366, tmp);
+    send_message(user, msg);
+    free(msg);
+    free(tmp);
+}
+
+char** get_channel_names(channel* chan, int* num_msgs) {
+    char** ret = (char**)malloc(16 * sizeof(char*));
+    char* msg = (char*)malloc(512);
+    sprintf(msg, "= %s :", chan->name);
+
+    for (list<channel_user>::iterator it = chan->users->begin();
+            it != chan->users->end(); ++it)
+    {
+        if (strlen(msg) + strlen(it->user->nickname) + 2 < 512) {
+            char* tmp = strdup(msg);
+            if (it->mode != ' ') {
+                sprintf(msg, "%s%c%s ", tmp, it->mode, it->user->nickname); 
+            } else {
+                sprintf(msg, "%s%s ", tmp, it->user->nickname); 
+            }
+            free(tmp);
+        } else {
+            ret[(*num_msgs)++] = msg;
+
+            msg = (char*)malloc(512);
+            sprintf(msg, "= %s :", chan->name);
+        }
+    }
+
+    ret[(*num_msgs)++] = msg;
+
+    return ret;
 }
 
 void leave_channel(channel* chan, user* user, char* msg) {
