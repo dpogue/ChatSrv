@@ -17,9 +17,14 @@ void get_host_name(user* u) {
 
     hp = gethostbyaddr((char*)&(u->addr.sin_addr.s_addr),
             sizeof(u->addr.sin_addr.s_addr), AF_INET);
-    u->host = hp;
+    if (hp != NULL) {
+        u->host = hp;
 
-    u->hostname = hp->h_name;
+        u->hostname = hp->h_name;
+    } else {
+        herror("gethostbyaddr");
+        u->hostname = "unknown-host";
+    }
 
     msg = noticemsg_s("AUTH", "*** Found your hostname");
     send_message(u, msg);

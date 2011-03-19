@@ -165,7 +165,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
     token = strtok(cmd, " ");
 
     if (!strcmp(token, "NICK")) {
-        char* nick = strtok(NULL, " \r");
+        char* nick = strtok(NULL, " \n");
 
         fprintf(stderr, "Got nickname request %s\n", nick);
 
@@ -225,8 +225,9 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
             send_motd(srv, sender);
         }
     } else if (!strcmp(token, "QUIT")) {
-        char* text = strtok(NULL, ":");
-        //char* text = strtok(NULL, "\n");
+        char* text = strtok(NULL, " ");
+        text = strpbrk(text, ":");
+        ++text;
 
         char* msg = quitmsg(sender, text);
         for (list<channel*>::iterator it = sender->channels->begin();
@@ -239,7 +240,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         srv->users->remove(sender);
         destroy_user(sender);
     } else if (!strcmp(token, "JOIN")) {
-        char* chan_name = strtok(NULL, "\n");
+        char* chan_name = strtok(NULL, " \n");
         channel* chan = NULL;
         map<char*, channel*>::iterator it = srv->channels->find(chan_name);
 
@@ -266,8 +267,9 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         send_message(sender, msg);
     } else if (!strcmp(token, "PRIVMSG")) {
         char* who = strtok(NULL, " ");
-        char* line = strtok(NULL, ":");
-        //char* line = strtok(NULL, "\n");
+        char* line = strtok(NULL, "\n");
+        line = strpbrk(line, ":");
+        ++line;
 
         if (*who == '#' || *who == '&' || *who == '~') {
             /* Sending to a channel */
@@ -302,8 +304,9 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         free(msg);
     } else if (!strcmp(token, "NOTICE")) {
         char* who = strtok(NULL, " ");
-        char* line = strtok(NULL, ":");
-        //char* line = strtok(NULL, "\n");
+        char* line = strtok(NULL, "\n");
+        line = strpbrk(line, ":");
+        ++line;
 
         char* msg = noticemsg(sender, who,  line);
         for (list<user*>::iterator i = srv->users->begin();
