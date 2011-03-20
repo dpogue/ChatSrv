@@ -28,7 +28,6 @@ int main(int argc, char** argv)
 {
     int sd, port, child;
     char* host;
-    char* bp;
     char sbuf[BUFLEN], tbuf[BUFLEN];
     char nick[BUFLEN];
     char channel[BUFLEN];
@@ -56,7 +55,7 @@ int main(int argc, char** argv)
 
     conServer(&sd, port, host);
 
-    if(child = fork() > 0) {
+    if((child = fork()) > 0) {
         recvLoop(sd,fp,argc,&mtx);
     }
 
@@ -162,7 +161,7 @@ void recvLoop(int sd, FILE *fp, int argc, pthread_mutex_t *mtx)
 	    if(argc == 4) {
 		writetoFile(fp,rbuf,mtx);
 	    }
-	    printf(rbuf);
+	    printf("%s",rbuf);
             fflush(stdout);
         }
     }

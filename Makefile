@@ -19,6 +19,9 @@ all: $(OBJECTS)
 clean:
 	rm -f $(OBJECTS)
 
+client: src/client/main.cpp
+	$(CXX) $(CXXFLAGS) -c src/client/main.cpp -o $(BINDIR)client
+
 $(OBJDIR)channel.o: src/channel.cpp
 	$(CXX) $(CXXFLAGS) -c src/channel.cpp -o $@
 
