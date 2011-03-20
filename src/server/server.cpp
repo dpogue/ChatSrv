@@ -154,6 +154,14 @@ void server_read_msg(server* srv, user* sender) {
         while (lines.size()) {
             line = lines.front();
             lines.pop();
+
+            if (srv->log) {
+                fwrite(">> ", 3, 1, srv->log);
+                fwrite(line, strlen(line), 1, srv->log);
+                fwrite("\n", 1, 1, srv->log);
+                fflush(srv->log);
+            }
+
             parse_cmd(srv, sender, line);
         }
     }
@@ -226,8 +234,12 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         }
     } else if (!strcmp(token, "QUIT")) {
         char* text = strtok(NULL, " ");
-        text = strpbrk(text, ":");
-        ++text;
+        if (text != NULL) {
+            text = strpbrk(text, ":");
+            ++text;
+        } else {
+            text = "Client exited.";
+        }
 
         char* msg = quitmsg(sender, text);
         for (list<channel*>::iterator it = sender->channels->begin();
@@ -349,6 +361,11 @@ static int confighandler(void* user, const char* section, const char* name,
         srv->port = atoi(value);
     } else if (MATCH("server", "motd")) {
         srv->motdfile = strdup(value);
+    } else if (MATCH("debug", "log")) {
+        srv->log = fopen(value, "ab+");
+        if (srv->log == NULL) {
+            perror("fopen");
+        }
     }
 
     return 0;

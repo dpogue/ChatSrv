@@ -29,6 +29,7 @@ typedef struct _server {
     char* version;
     time_t starttime;
     char* motdfile;
+    FILE* log;
 } server;
 
 /**
