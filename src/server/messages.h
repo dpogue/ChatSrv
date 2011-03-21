@@ -13,6 +13,7 @@ void send_message(user* client, char* msg);
 char* numericmsg(server* srv, user* to, int id, char* msg);
 char* pongmsg(server* srv);
 char* joinmsg(user* sender, channel* chan);
+char* topicmsg(channel* chan);
 char* noticemsg(user* sender, char* receiver, char* msg);
 char* noticemsg_s(char* sender, char* msg);
 char* privmsg(user* sender, char* receiver, char* msg);

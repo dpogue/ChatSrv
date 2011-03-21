@@ -35,6 +35,14 @@ char* joinmsg(user* sender, channel* chan) {
     return join;
 }
 
+char* topicmsg(channel* chan) {
+    char* topic = (char*)malloc(512);
+
+    sprintf(topic, ":%s TOPIC %s :%s\n", chan->topic_who, chan->name, chan->topic);
+
+    return topic;
+}
+
 char* noticemsg(user* sender, char* receiver, char* msg) {
     char* notice = (char*)malloc(512);
     char* uhost = user_userhost_name(sender);

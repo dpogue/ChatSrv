@@ -56,6 +56,27 @@ void join_channel(channel* chan, user* user) {
     send_to_channel(chan, msg, NULL);
     free(msg);
 
+    if (chan->topic == NULL) {
+        msg = numericmsg(chan->server, user, 331, ":No topic is set");
+        send_message(user, msg);
+        free(msg);
+    } else {
+        char* topic = (char*)malloc(512);
+        sprintf(topic, "%s :%s", chan->name, chan->topic);
+        msg = numericmsg(chan->server, user, 332, topic);
+        send_message(user, msg);
+        free(msg);
+        free(topic);
+
+        topic = (char*)malloc(512);
+        sprintf(topic, "%s %s %d", chan->name, chan->topic_who,
+                chan->topic_time);
+        msg = numericmsg(chan->server, user, 333, topic);
+        send_message(user, msg);
+        free(msg);
+        free(topic);
+    }
+
     int len = 0;
     char** names = get_channel_names(chan, &len);
 
@@ -122,7 +143,30 @@ void leave_channel(channel* chan, user* user, char* msg) {
 }
 
 void channel_set_topic(channel* chan, char* topic, user* who) {
+    for (list<channel_user>::iterator it = chan->users->begin();
+            it != chan->users->end(); ++it) {
+        char mode = it->mode;
+        if (it->user == who &&
+                mode != '@' && mode != '~' && mode != '&' && mode != '%')
+        {
+            char* tmp = (char*)malloc(512);
+            sprintf(tmp, "%s :%s", chan->name, "You're not a channel operator");
+            char* msg = numericmsg(chan->server, who, 482, tmp);
+            send_message(who, msg);
+            free(msg);
+            free(tmp);
+            return;
+        }
+    }
+
     chan->topic = strdup(topic);
     chan->topic_who = strdup(who->nickname);
     chan->topic_time = time(NULL);
+
+    for (list<channel_user>::iterator it = chan->users->begin();
+            it != chan->users->end(); ++it) {
+        char* msg = topicmsg(chan);
+        send_message(it->user, msg);
+        free(msg);
+    }
 }

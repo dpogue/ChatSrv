@@ -3,6 +3,7 @@
 #include "messages.h"
 #include "../3rdParty/inih/ini.h"
 #include <cstdio>
+#include <cctype>
 #include <cstring>
 #include <strings.h>
 #include <sys/types.h>
@@ -225,7 +226,24 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
         fprintf(stderr, "Got nickname request %s\n", nick);
 
+        for (int i = 0; i < strlen(nick); i++) {
+            if (!isalpha(nick[i]) && !isdigit(nick[i]) && nick[i] != '['
+                    && nick[i] != ']' && nick[i] != '\'' && nick[i] != '^'
+                    && nick[i] != '-' && nick[i] != '\\' && nick[i] != '{'
+                    && nick[i] != '}' && nick[i] != '|' && nick[i] != '_') {
+                fprintf(stderr, "\t... nickname is invalid!\n");
+                char* msg = (char*)malloc(512);
+                sprintf(msg, "%s :Erroneous Nickname", nick);
+                char* tmp = numericmsg(srv, sender, 433, msg);
+                send_message(sender, tmp);
+                free(tmp);
+                free(msg);
+                return;
+            }
+        }
+
         if (srv->nicknames->find(nick) != srv->nicknames->end()) {
+            fprintf(stderr, "\t... nickname is already in use!\n");
             char* msg = (char*)malloc(512);
             sprintf(msg, "%s :Nickname already in use", nick);
             char* tmp = numericmsg(srv, sender, 433, msg);
@@ -395,6 +413,36 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
                 free(msg);
             }
         }
+    } else if (!strcmp(token, "TOPIC")) {
+        char* chan_name = strtok(NULL, " ");
+        char* topic = strtok(NULL, "\n");
+        channel* chan = NULL;
+        map<char*, channel*>::iterator it = srv->channels->find(chan_name);
+
+        if ((*chan_name != '#' && *chan_name != '&' && *chan_name != '~')
+                || it == srv->channels->end()) {
+            char* tmp = (char*)malloc(512);
+            sprintf(tmp, "%s :No such channel", chan_name);
+            char* msg = numericmsg(srv, sender, 403, tmp);
+            send_message(sender, msg);
+            free(msg);
+            free(tmp);
+            return;
+        }
+
+        chan = it->second;
+
+        if (topic == NULL) {
+            char* msg = topicmsg(chan);
+            send_message(sender, msg);
+            free(msg);
+            return;
+        } else {
+            topic = strpbrk(topic, ":");
+            ++topic;
+        }
+
+        channel_set_topic(chan, topic, sender);
     }
 }
 
