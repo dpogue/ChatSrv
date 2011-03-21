@@ -18,7 +18,7 @@ char* noticemsg(user* sender, char* receiver, char* msg);
 char* noticemsg_s(char* sender, char* msg);
 char* privmsg(user* sender, char* receiver, char* msg);
 char* nickmsg(user* sender, char* name);
-char* partmsg(user* sender);
+char* partmsg(user* sender, channel* chan, char* msg);
 char* quitmsg(user* sender, char* text);
 
 #endif

@@ -81,11 +81,13 @@ char* nickmsg(user* sender, char* name) {
     return nick;
 }
 
-char* partmsg(user* sender) {
+char* partmsg(user* sender, channel* chan, char* msg) {
     char* part = (char*)malloc(512);
+    char* uhost = user_userhost_name(sender);
 
-    sprintf(part, ":%s PART\n", sender->nickname);
+    sprintf(part, ":%s PART %s :%s\n", uhost, chan->name, msg);
 
+    free(uhost);
     return part;
 }
 

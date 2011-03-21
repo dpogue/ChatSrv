@@ -297,6 +297,38 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
             send_motd(srv, sender);
         }
+    } else if (!strcmp(token, "PART")) {
+        char* chan_name = strtok(NULL, " ");
+        char* part_msg = strtok(NULL, "\n");
+        channel* chan = NULL;
+        map<char*, channel*>::iterator it = srv->channels->find(chan_name);
+
+        if ((*chan_name != '#' && *chan_name != '&' && *chan_name != '~')
+                || it == srv->channels->end()) {
+            char* tmp = (char*)malloc(512);
+            sprintf(tmp, "%s :No such channel", chan_name);
+            char* msg = numericmsg(srv, sender, 403, tmp);
+            send_message(sender, msg);
+            free(msg);
+            free(tmp);
+            return;
+        }
+
+        chan = it->second;
+
+        if (part_msg != NULL) {
+            part_msg= strpbrk(part_msg , ":");
+            ++part_msg ;
+        }
+
+        char* msg = partmsg(sender, chan, part_msg);
+        send_message(sender, msg);
+        sender->channels->remove(chan);
+        if (leave_channel(chan, sender, msg)) {
+            /* Last user in the channel... destroy it */
+            srv->channels->erase(chan_name);
+        }
+        free(msg);
     } else if (!strcmp(token, "QUIT")) {
         char* text = strtok(NULL, " ");
         if (text != NULL) {
