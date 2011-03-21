@@ -28,6 +28,8 @@ typedef struct _channel {
 
 channel* create_channel(struct _server* server, char* name);
 
+void destroy_channel(channel* chan);
+
 void send_to_channel(channel* chan, char* msg, struct _user* sender);
 
 void join_channel(channel* chan, struct _user* user);

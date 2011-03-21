@@ -59,11 +59,22 @@ server* server_init() {
 
     srv->starttime = time(NULL);
 
+    srv->motdtext = NULL;
+
     return srv;
 }
 
 void server_destroy(server* srv) {
     close(srv->fd_listen);
+
+    for (map<char*, channel*, set_strcmp>::iterator it = srv->channels->begin();
+            it != srv->channels->end(); ++it) {
+        destroy_channel(it->second);
+        it->second = NULL;
+
+        free(it->first);
+    }
+    delete srv->channels;
 
     for (list<user*>::iterator it = srv->users->begin();
             it != srv->users->end(); ++it) {
@@ -71,6 +82,17 @@ void server_destroy(server* srv) {
         *it = NULL;
     }
     delete srv->users;
+
+    srv->nicknames->clear();
+    delete srv->nicknames;
+
+    if (srv->motdtext != NULL) {
+        for (vector<char*>::iterator it = srv->motdtext->begin();
+                it != srv->motdtext->end(); ++it) {
+            free(*it);
+        }
+        delete srv->motdtext;
+    }
 
     free(srv->servname);
     free(srv->version);
@@ -172,7 +194,8 @@ void server_read_msg(server* srv, user* sender) {
         }
 
         while (lines.size()) {
-            line = lines.front();
+            char* tmp = line = lines.front();
+            lines.pop();
 
             if (srv->log) {
                 fprintf(srv->log, "[%s] >> %s\n",
@@ -182,9 +205,7 @@ void server_read_msg(server* srv, user* sender) {
 
             parse_cmd(srv, sender, line);
 
-            line = lines.front();
-            lines.pop();
-            //free(line);
+            free(tmp);
         }
     }
 
@@ -294,7 +315,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
         if (it == srv->channels->end()) {
             chan = create_channel(srv, chan_name);
-            srv->channels->insert(make_pair(chan_name, chan));
+            srv->channels->insert(make_pair(strdup(chan_name), chan));
         } else {
             chan = it->second;
         }
@@ -391,7 +412,7 @@ static int confighandler(void* user, const char* section, const char* name,
     } else if (MATCH("server", "motd")) {
         srv->motdfile = strdup(value);
     } else if (MATCH("debug", "log")) {
-        srv->log = fopen(value, "ab+");
+        srv->log = fopen(value, "wb+");
         if (srv->log == NULL) {
             perror("fopen");
         }

@@ -32,9 +32,7 @@ void get_host_name(user* u) {
 }
 
 void send_motd(server* srv, user* u) {
-    static vector<char*> motd;
-
-    if (motd.size() == 0) {
+    if (srv->motdtext == NULL) {
         FILE* fd = fopen(srv->motdfile, "r");
         if (fd == NULL) {
             char* msg = ":MOTD file is missing";
@@ -44,12 +42,14 @@ void send_motd(server* srv, user* u) {
             return;
         }
 
+        srv->motdtext = new vector<char*>();
+
         char line[80];
         while (fgets(line, sizeof(line), fd) != NULL) {
             while (isspace(line[strlen(line) - 1])) {
                 line[strlen(line) - 1] = '\0';
             }
-            motd.push_back(strdup(line));
+            srv->motdtext->push_back(strdup(line));
         }
         fclose(fd);
     }
@@ -61,8 +61,8 @@ void send_motd(server* srv, user* u) {
     send_message(u, tmp);
     free(tmp);
 
-    for (vector<char*>::iterator it = motd.begin();
-            it != motd.end(); ++it)
+    for (vector<char*>::iterator it = srv->motdtext->begin();
+            it != srv->motdtext->end(); ++it)
     {
         sprintf(msg, ":- %s", *it);
         tmp = numericmsg(srv, u, 372, msg);

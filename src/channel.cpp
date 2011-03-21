@@ -20,6 +20,16 @@ channel* create_channel(server* server, char* name) {
     return chan;
 }
 
+void destroy_channel(channel* chan) {
+    free(chan->name);
+    free(chan->topic);
+    free(chan->topic_who);
+
+    delete chan->users;
+
+    free(chan);
+}
+
 void send_to_channel(channel* chan, char* msg, user* sender) {
     for (list<channel_user>::iterator it = chan->users->begin();
             it != chan->users->end(); ++it) {

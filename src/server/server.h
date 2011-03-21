@@ -3,6 +3,7 @@
 
 #include <list>
 #include <set>
+#include <vector>
 #include <cstring>
 #include <map>
 #include <ctime>
@@ -29,6 +30,7 @@ typedef struct _server {
     char* version;
     time_t starttime;
     char* motdfile;
+    std::vector<char*>* motdtext;
     FILE* log;
 } server;
 

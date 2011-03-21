@@ -42,4 +42,6 @@ void destroy_user(user* usr) {
     delete usr->channels;
 
     close(usr->socket);
+
+    free(usr);
 }
