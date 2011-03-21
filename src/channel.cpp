@@ -125,7 +125,7 @@ char** get_channel_names(channel* chan, int* num_msgs) {
     return ret;
 }
 
-void leave_channel(channel* chan, user* user, char* msg) {
+bool leave_channel(channel* chan, user* user, char* msg) {
     list<channel_user>::iterator idx = chan->users->end();
 
     for (list<channel_user>::iterator it = chan->users->begin();
@@ -140,6 +140,13 @@ void leave_channel(channel* chan, user* user, char* msg) {
     if (idx != chan->users->end()) {
         chan->users->erase(idx);
     }
+
+    if (chan->users->size() == 0) {
+        destroy_channel(chan);
+        return true;
+    }
+
+    return false;
 }
 
 void channel_set_topic(channel* chan, char* topic, user* who) {

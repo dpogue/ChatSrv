@@ -226,7 +226,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
         fprintf(stderr, "Got nickname request %s\n", nick);
 
-        for (int i = 0; i < strlen(nick); i++) {
+        for (unsigned int i = 0; i < strlen(nick); i++) {
             if (!isalpha(nick[i]) && !isdigit(nick[i]) && nick[i] != '['
                     && nick[i] != ']' && nick[i] != '\'' && nick[i] != '^'
                     && nick[i] != '-' && nick[i] != '\\' && nick[i] != '{'
@@ -309,7 +309,12 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
         char* msg = quitmsg(sender, text);
         for (list<channel*>::iterator it = sender->channels->begin();
                 it != sender->channels->end(); ++it) {
-            leave_channel(*it, sender, msg);
+            char* channame = strdup((*it)->name);
+            if (leave_channel(*it, sender, msg)) {
+                /* Last user in the channel... destroy it */
+                srv->channels->erase(channame);
+            }
+            free(channame);
         }
         free(msg);
 

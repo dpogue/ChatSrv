@@ -36,7 +36,14 @@ void join_channel(channel* chan, struct _user* user);
 
 char** get_channel_names(channel* chan, int* num_msgs);
 
-void leave_channel(channel* chan, struct _user* user, char* msg);
+/**
+ * Removes a user from a channel, sending the specified message to all other
+ * users in the channel.
+ *
+ * @author Darryl Pogue
+ * @return true if the channel is now empty (and has been deleted).
+ */
+bool leave_channel(channel* chan, struct _user* user, char* msg);
 
 void channel_set_topic(channel* chan, char* topic, struct _user* who);
 
