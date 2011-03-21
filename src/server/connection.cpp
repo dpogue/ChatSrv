@@ -79,7 +79,9 @@ void send_motd(server* srv, user* u) {
 
 void send_welcome_info(server* srv, user* u) {
     char* msg = (char*)malloc(512);
-    sprintf(msg, ":Welcome to the IRC Network %s", user_userhost_name(u));
+    char* uhost = user_userhost_name(u);
+    sprintf(msg, ":Welcome to the IRC Network %s", uhost);
+    free(uhost);
     char* sndmsg = numericmsg(srv, u, 1, msg);
     send_message(u, sndmsg);
     free(sndmsg);

@@ -41,6 +41,14 @@ typedef struct _server {
 server* server_init();
 
 /**
+ * Closes the server's connections and frees the data associated with it.
+ *
+ * @author Darryl Pogue
+ * @param srv The server to destroy.
+ */
+void server_destroy(server* srv);
+
+/**
  * Accepts an incoming connection.
  *
  * @author Darryl Pogue

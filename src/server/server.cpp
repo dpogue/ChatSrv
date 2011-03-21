@@ -62,6 +62,26 @@ server* server_init() {
     return srv;
 }
 
+void server_destroy(server* srv) {
+    close(srv->fd_listen);
+
+    for (list<user*>::iterator it = srv->users->begin();
+            it != srv->users->end(); ++it) {
+        destroy_user(*it);
+        *it = NULL;
+    }
+    delete srv->users;
+
+    free(srv->servname);
+    free(srv->version);
+    free(srv->motdfile);
+    if (srv->log != NULL) {
+        fclose(srv->log);
+    }
+
+    free(srv);
+}
+
 void server_accept(server* srv) {
     sockaddr_in addr;
     socklen_t len = sizeof(addr);
@@ -164,9 +184,11 @@ void server_read_msg(server* srv, user* sender) {
 
             line = lines.front();
             lines.pop();
-            free(line);
+            //free(line);
         }
     }
+
+    free(buf);
 }
 
 void parse_cmd(server* srv, user* sender, char* cmd) {
@@ -281,6 +303,7 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
     } else if (!strcmp(token, "PING")) {
         char* msg = pongmsg(srv);
         send_message(sender, msg);
+        free(msg);
     } else if (!strcmp(token, "PRIVMSG")) {
         char* who = strtok(NULL, " ");
         char* line = strtok(NULL, "\n");
@@ -341,11 +364,13 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
                 i != srv->users->end(); ++i) {
             if (!strcmp((*i)->nickname, who)) {
                 char* msg = (char*)malloc(512);
+                char* uhost = user_userhost(*i);
                 sprintf(msg, ":%s=%c%s", (*i)->nickname,
-                        ((*i)->away ? '-' : '+'), user_userhost(*i));
+                        ((*i)->away ? '-' : '+'), uhost);
                 char* tmp = numericmsg(srv, sender, 302, msg);
                 send_message(sender, tmp);
                 free(tmp);
+                free(uhost);
                 free(msg);
             }
         }
