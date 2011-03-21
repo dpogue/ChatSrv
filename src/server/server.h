@@ -67,6 +67,14 @@ void server_loop(server* srv);
  */
 void server_read_msg(server* srv, user* sender);
 
+/**
+ * Parses a line of received data for commands.
+ *
+ * @author Darryl Pogue
+ * @param srv The pointer to the server structure.
+ * @param sender The sender of the message.
+ * @param cmd The command that was sent.
+ */
 void parse_cmd(server* srv, user* sender, char* cmd);
 
 #endif

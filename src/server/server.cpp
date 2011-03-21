@@ -153,16 +153,18 @@ void server_read_msg(server* srv, user* sender) {
 
         while (lines.size()) {
             line = lines.front();
-            lines.pop();
 
             if (srv->log) {
-                fwrite(">> ", 3, 1, srv->log);
-                fwrite(line, strlen(line), 1, srv->log);
-                fwrite("\n", 1, 1, srv->log);
+                fprintf(srv->log, "[%s] >> %s\n",
+                        inet_ntoa(sender->addr.sin_addr), line);
                 fflush(srv->log);
             }
 
             parse_cmd(srv, sender, line);
+
+            line = lines.front();
+            lines.pop();
+            free(line);
         }
     }
 }
@@ -174,11 +176,13 @@ void parse_cmd(server* srv, user* sender, char* cmd) {
 
     if (!strcmp(token, "NICK")) {
         char* nick = strtok(NULL, " \n");
+        if (nick[0] == ':') { /* oh Quassel... */
+            ++nick;
+        }
 
         fprintf(stderr, "Got nickname request %s\n", nick);
 
         if (srv->nicknames->find(nick) != srv->nicknames->end()) {
-            fprintf(stderr, "\tFound in set!\n");
             char* msg = (char*)malloc(512);
             sprintf(msg, "%s :Nickname already in use", nick);
             char* tmp = numericmsg(srv, sender, 433, msg);
