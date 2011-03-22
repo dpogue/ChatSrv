@@ -54,6 +54,7 @@ void server_destroy(server* srv);
  * Accepts an incoming connection.
  *
  * @author Darryl Pogue
+ * @author Terence Stenvold
  * @param srv The pointer to the server structure.
  */
 void server_accept(server* srv);

@@ -22,6 +22,14 @@ typedef struct _user {
     bool away;
 } user;
 
+/**
+ * Creates a new user for a newly accepted socket.
+ *
+ * @author Darryl Pogue
+ * @param fd The file descriptor of the socket.
+ * @param addr The socket address.
+ * @return A new user structure.
+ */
 user* accept_user(int fd, sockaddr_in addr);
 
 /**
