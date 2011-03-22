@@ -1,3 +1,12 @@
+/**
+ * Simple Client for CommAudio
+ * 
+ * @date March 19th 2010
+ * @version 0.1
+ * @author Terence Stenvold
+ * 
+ */
+
 #include <stdio.h>
 #include <netdb.h>
 #include <sys/types.h>
@@ -24,6 +33,15 @@ void initChat(char* nick, char* channel, char* server, int sd);
 void recvLoop(int sd, FILE *fp, int argc, pthread_mutex_t *mtx);
 
 
+
+/**
+ * Main Function for the client
+ * Takes arguments and starts the clien
+ *
+ * @param argc is the number of arguments gived
+ * @param argv is the actual arguments
+ * @author Terence Stenvold
+ */
 int main(int argc, char** argv)
 {
     int sd, port, child;
@@ -68,6 +86,7 @@ int main(int argc, char** argv)
 	    printf("\n\nQUITTING!\n");
 	    break;
 	}
+	//Build the message to send
 	sprintf(sbuf, "PRIVMSG %s :%s", channel, tbuf);
 	
  	if(argc == 4) {
@@ -82,6 +101,17 @@ int main(int argc, char** argv)
     return 0;
 }
 
+
+/**
+ * writes a message to the file
+ * locks the mutex to prevent both writing to it at
+ * the same tim
+ *
+ * @param fp is the file pointer
+ * @param msg is the message to write
+ * @param mtx is the mutex
+ * @author Terence Stenvold
+ */
 void writetoFile(FILE *fp, char *msg, pthread_mutex_t *mtx)
 {
     pthread_mutex_unlock(mtx);
@@ -90,6 +120,15 @@ void writetoFile(FILE *fp, char *msg, pthread_mutex_t *mtx)
     fflush(fp);
 }
 
+
+
+/**
+ * Opens a log file
+ *
+ * @param fp is the file pointer
+ * @param filename is the file to open
+ * @author Terence Stenvold
+ */
 void openFile(FILE **fp, char *filename) 
 {
     *fp = fopen (filename,"w");
@@ -100,6 +139,16 @@ void openFile(FILE **fp, char *filename)
     }
 }
 
+
+/**
+ * Connects to the server specified 
+ * and creates a socket descriptor
+ *
+ * @param sd is the socket descriptor
+ * @param port is kinda obvious
+ * @param host also self explainitory
+ * @author Terence Stenvold
+ */
 void conServer(int* sd, int port, char* host)
 {
     struct hostent* hp;
@@ -130,6 +179,17 @@ void conServer(int* sd, int port, char* host)
     }
 }
 
+
+/**
+ * Loops and recvies from the socket
+ * and the prints to the screen
+ * 
+ * @param sd is the socket descriptor
+ * @param fp is the file pointer
+ * @param argc number of arguments passed
+ * @param mtx is the mutex
+ * @author Terence Stenvold
+ */
 void recvLoop(int sd, FILE *fp, int argc, pthread_mutex_t *mtx)
 {
     int n, bytes_to_read;
@@ -147,6 +207,7 @@ void recvLoop(int sd, FILE *fp, int argc, pthread_mutex_t *mtx)
             bp += n;
             bytes_to_read -= n;
 
+	    //READ until buffer full or \n recieved
             if (*(bp - 1) == '\n') {
                 *bp = '\0';
                 break;
@@ -157,6 +218,7 @@ void recvLoop(int sd, FILE *fp, int argc, pthread_mutex_t *mtx)
 
         strncpy(tbuf, rbuf, 6);
 
+	//Ignore NOTICE messages
         if (strcmp(tbuf, "NOTICE") != 0) {
 	    if(argc == 4) {
 		writetoFile(fp,rbuf,mtx);
@@ -170,6 +232,17 @@ void recvLoop(int sd, FILE *fp, int argc, pthread_mutex_t *mtx)
 }
 
 
+/**
+ * Initailizes the chat with the 
+ * proper sequence of messages from 
+ * the user
+ *
+ * @param nick is a char array for a nickanme
+ * @param channel is the channel to join
+ * @param server is the hostname 
+ * @param sd is the socket descriptor 
+ * @author Terence Stenvold
+ */
 void initChat(char* nick, char* channel, char* server, int sd)
 {
     char tbuf[BUFLEN];
@@ -183,5 +256,6 @@ void initChat(char* nick, char* channel, char* server, int sd)
     send(sd, tbuf, strlen(tbuf), 0);
     sprintf(tbuf, "JOIN %s", channel);
     send(sd, tbuf, strlen(tbuf), 0);
+    //remove the \n 
     channel[strlen(channel) - 1] = '\0';
 }
